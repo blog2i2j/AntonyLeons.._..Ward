@@ -5,6 +5,7 @@ import dev.leons.ward.dto.InfoDto;
 import dev.leons.ward.dto.MachineDto;
 import dev.leons.ward.dto.ProcessorDto;
 import dev.leons.ward.dto.StorageDto;
+import dev.leons.ward.dto.TransferDto;
 import dev.leons.ward.components.UtilitiesComponent;
 import dev.leons.ward.exceptions.ApplicationNotConfiguredException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +14,7 @@ import oshi.SystemInfo;
 import oshi.hardware.CentralProcessor;
 import oshi.hardware.GlobalMemory;
 import oshi.hardware.HWDiskStore;
+import oshi.hardware.NetworkIF;
 import oshi.hardware.PhysicalMemory;
 import oshi.software.os.OperatingSystem;
 
@@ -199,4 +201,28 @@ public class InfoService
             throw new ApplicationNotConfiguredException();
         }
     }
+    /**
+     * Gets network transfer rates
+     * 
+     * @return NetworkTransferDto with upload and download rates
+     */
+    private TransferDto getNetworkTransfer() {
+        TransferDto transferDto = new TransferDto();
+        List<NetworkIF> networkInterfaces = systemInfo.getHardware().getNetworkIFs();
+        
+        long totalBytesRecv = 0;
+        long totalBytesSent = 0;
+        
+        for (NetworkIF net : networkInterfaces) {
+            net.updateAttributes();
+            totalBytesRecv += net.getBytesRecv();
+            totalBytesSent += net.getBytesSent();
+        }
+        
+        transferDto.setDownload(getConvertedCapacity(totalBytesRecv));
+        transferDto.setUpload(getConvertedCapacity(totalBytesSent));
+        
+        return transferDto;
+    }
+
 }
